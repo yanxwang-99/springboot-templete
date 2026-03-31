@@ -2,6 +2,7 @@ package com.wyx.demo.controller;
 
 import com.wyx.demo.common.ApiResponse;
 import com.wyx.demo.dto.UserInfoResponse;
+import com.wyx.demo.security.TokenBlacklist;
 import com.wyx.demo.service.UserService;
 import com.wyx.demo.util.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,11 +20,12 @@ public class UserController {
 
     private final UserService userService;
     private final JwtUtil jwtUtil;
+    private final TokenBlacklist tokenBlacklist;
 
     @GetMapping("/info")
     public ResponseEntity<ApiResponse<UserInfoResponse>> getUserInfo(HttpServletRequest request) {
         String token = extractToken(request);
-        if (token == null || !jwtUtil.validateToken(token)) {
+        if (token == null || !jwtUtil.validateToken(token) || tokenBlacklist.isBlacklisted(token)) {
             return ResponseEntity
                     .status(HttpStatus.UNAUTHORIZED)
                     .body(ApiResponse.error(-1, "Unauthorized Exception"));

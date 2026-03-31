@@ -2,6 +2,7 @@ package com.wyx.demo.controller;
 
 import com.wyx.demo.common.ApiResponse;
 import com.wyx.demo.dto.MenuDto;
+import com.wyx.demo.security.TokenBlacklist;
 import com.wyx.demo.service.MenuService;
 import com.wyx.demo.util.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,11 +22,12 @@ public class MenuController {
 
     private final MenuService menuService;
     private final JwtUtil jwtUtil;
+    private final TokenBlacklist tokenBlacklist;
 
     @GetMapping("/all")
     public ResponseEntity<ApiResponse<List<MenuDto>>> getAllMenus(HttpServletRequest request) {
         String token = extractToken(request);
-        if (token == null || !jwtUtil.validateToken(token)) {
+        if (token == null || !jwtUtil.validateToken(token) || tokenBlacklist.isBlacklisted(token)) {
             return ResponseEntity
                     .status(HttpStatus.UNAUTHORIZED)
                     .body(ApiResponse.error(-1, "Unauthorized Exception"));

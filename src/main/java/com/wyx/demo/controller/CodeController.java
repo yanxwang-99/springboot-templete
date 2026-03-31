@@ -1,6 +1,7 @@
 package com.wyx.demo.controller;
 
 import com.wyx.demo.common.ApiResponse;
+import com.wyx.demo.security.TokenBlacklist;
 import com.wyx.demo.service.CodeService;
 import com.wyx.demo.util.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,11 +21,12 @@ public class CodeController {
 
     private final CodeService codeService;
     private final JwtUtil jwtUtil;
+    private final TokenBlacklist tokenBlacklist;
 
     @GetMapping("/codes")
     public ResponseEntity<ApiResponse<List<String>>> getCodes(HttpServletRequest request) {
         String token = extractToken(request);
-        if (token == null || !jwtUtil.validateToken(token)) {
+        if (token == null || !jwtUtil.validateToken(token) || tokenBlacklist.isBlacklisted(token)) {
             return ResponseEntity
                     .status(HttpStatus.UNAUTHORIZED)
                     .body(ApiResponse.error(-1, "Unauthorized Exception"));

@@ -82,6 +82,11 @@ public class JwtUtil {
         return claims != null ? claims.get("id", Long.class) : null;
     }
 
+    public Long getExpirationFromToken(String token) {
+        Claims claims = parseToken(token);
+        return claims != null ? claims.getExpiration().getTime() : null;
+    }
+
     @SuppressWarnings("unchecked")
     public List<String> getRolesFromToken(String token) {
         Claims claims = parseToken(token);

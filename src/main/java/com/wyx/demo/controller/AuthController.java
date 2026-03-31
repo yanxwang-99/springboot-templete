@@ -3,6 +3,7 @@ package com.wyx.demo.controller;
 import com.wyx.demo.common.ApiResponse;
 import com.wyx.demo.dto.LoginRequest;
 import com.wyx.demo.dto.LoginResponse;
+import com.wyx.demo.security.TokenBlacklist;
 import com.wyx.demo.service.AuthService;
 import com.wyx.demo.util.JwtUtil;
 import jakarta.servlet.http.Cookie;
@@ -21,6 +22,7 @@ public class AuthController {
 
     private final AuthService authService;
     private final JwtUtil jwtUtil;
+    private final TokenBlacklist tokenBlacklist;
 
     private static final String COOKIE_NAME = "jwt";
     private static final int COOKIE_MAX_AGE = 24 * 60 * 60; // 1天
@@ -47,7 +49,14 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ApiResponse<String> logout(HttpServletResponse response) {
+    public ApiResponse<String> logout(HttpServletRequest request, HttpServletResponse response) {
+        String token = extractToken(request);
+        if (token != null) {
+            Long expMillis = jwtUtil.getExpirationFromToken(token);
+            if (expMillis != null) {
+                tokenBlacklist.add(token, expMillis - System.currentTimeMillis());
+            }
+        }
         clearCookie(response);
         return ApiResponse.success("");
     }
@@ -97,5 +106,13 @@ public class AuthController {
     private void clearCookie(HttpServletResponse response) {
         response.addHeader("Set-Cookie",
                 String.format("%s=; Path=/; HttpOnly; Secure; SameSite=none; Max-Age=0", COOKIE_NAME));
+    }
+
+    private String extractToken(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            return authHeader.substring(7);
+        }
+        return null;
     }
 }
