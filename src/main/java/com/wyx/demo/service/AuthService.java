@@ -42,7 +42,14 @@ public class AuthService {
         return new LoginResult(loginResponse, user);
     }
 
-    public String refresh(String refreshToken) {
+    @Getter
+    @AllArgsConstructor
+    public static class RefreshResult {
+        private final String accessToken;
+        private final String refreshToken;
+    }
+
+    public RefreshResult refresh(String refreshToken) {
         if (refreshToken == null || !jwtUtil.validateToken(refreshToken)) {
             return null;
         }
@@ -58,6 +65,9 @@ public class AuthService {
             return null;
         }
 
-        return jwtUtil.generateAccessToken(user.getId(), user.getUsername(), user.getRoles());
+        String newAccessToken = jwtUtil.generateAccessToken(user.getId(), user.getUsername(), user.getRoles());
+        String newRefreshToken = jwtUtil.generateRefreshToken(user.getId(), user.getUsername());
+
+        return new RefreshResult(newAccessToken, newRefreshToken);
     }
 }

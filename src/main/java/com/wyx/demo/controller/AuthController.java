@@ -71,18 +71,30 @@ public class AuthController {
                     .body(ApiResponse.error(-1, "Forbidden Exception"));
         }
 
-        String newAccessToken = authService.refresh(refreshToken);
-        if (newAccessToken == null) {
+        if (tokenBlacklist.isBlacklisted(refreshToken)) {
             return ResponseEntity
                     .status(HttpStatus.FORBIDDEN)
                     .body(ApiResponse.error(-1, "Forbidden Exception"));
         }
 
-        // 重新设置 Cookie
-        setCookie(response, refreshToken);
+        AuthService.RefreshResult refreshResult = authService.refresh(refreshToken);
+        if (refreshResult == null) {
+            return ResponseEntity
+                    .status(HttpStatus.FORBIDDEN)
+                    .body(ApiResponse.error(-1, "Forbidden Exception"));
+        }
+
+        // 将旧 refreshToken 加入黑名单，防止重放
+        Long expMillis = jwtUtil.getExpirationFromToken(refreshToken);
+        if (expMillis != null) {
+            tokenBlacklist.add(refreshToken, expMillis - System.currentTimeMillis());
+        }
+
+        // 设置新的 refreshToken Cookie
+        setCookie(response, refreshResult.getRefreshToken());
 
         // 直接返回 accessToken 字符串，不包装
-        return ResponseEntity.ok(newAccessToken);
+        return ResponseEntity.ok(refreshResult.getAccessToken());
     }
 
     private String getCookie(HttpServletRequest request) {
