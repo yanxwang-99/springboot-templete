@@ -94,12 +94,6 @@ public class AuthController {
     }
 
     private void setCookie(HttpServletResponse response, String value) {
-        Cookie cookie = new Cookie(COOKIE_NAME, value);
-        cookie.setHttpOnly(true);
-        cookie.setSecure(true);
-        cookie.setPath("/");
-        cookie.setMaxAge(COOKIE_MAX_AGE);
-        // SameSite=none 需要通过 header 设置
         response.addHeader("Set-Cookie",
                 String.format("%s=%s; Path=/; HttpOnly; Secure; SameSite=none; Max-Age=%d",
                         COOKIE_NAME, value, COOKIE_MAX_AGE));
