@@ -3,8 +3,6 @@ package com.wyx.demo.controller;
 import com.wyx.demo.common.ApiResponse;
 import com.wyx.demo.dto.LoginRequest;
 import com.wyx.demo.dto.LoginResponse;
-import com.wyx.demo.entity.User;
-import com.wyx.demo.repository.UserRepository;
 import com.wyx.demo.service.AuthService;
 import com.wyx.demo.util.JwtUtil;
 import jakarta.servlet.http.Cookie;
@@ -23,7 +21,6 @@ public class AuthController {
 
     private final AuthService authService;
     private final JwtUtil jwtUtil;
-    private final UserRepository userRepository;
 
     private static final String COOKIE_NAME = "jwt";
     private static final int COOKIE_MAX_AGE = 24 * 60 * 60; // 1天
@@ -33,22 +30,20 @@ public class AuthController {
             @Valid @RequestBody LoginRequest request,
             HttpServletResponse response) {
 
-        LoginResponse loginResponse = authService.login(request);
+        AuthService.LoginResult loginResult = authService.login(request);
 
-        if (loginResponse == null) {
+        if (loginResult == null) {
             return ResponseEntity
                     .status(HttpStatus.FORBIDDEN)
                     .body(ApiResponse.error(-1, "Username or password is incorrect."));
         }
 
         // 生成 refreshToken 并设置 Cookie
-        User user = userRepository.findByUsername(loginResponse.getUsername()).orElse(null);
-        if (user != null) {
-            String refreshToken = jwtUtil.generateRefreshToken(user.getId(), user.getUsername());
-            setCookie(response, refreshToken);
-        }
+        String refreshToken = jwtUtil.generateRefreshToken(
+                loginResult.getUser().getId(), loginResult.getUser().getUsername());
+        setCookie(response, refreshToken);
 
-        return ResponseEntity.ok(ApiResponse.success(loginResponse));
+        return ResponseEntity.ok(ApiResponse.success(loginResult.getResponse()));
     }
 
     @PostMapping("/logout")
