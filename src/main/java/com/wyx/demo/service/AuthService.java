@@ -47,6 +47,10 @@ public class AuthService {
             return null;
         }
 
+        if (!"refresh".equals(jwtUtil.parseToken(refreshToken).get("type", String.class))) {
+            return null;
+        }
+
         String username = jwtUtil.getUsernameFromToken(refreshToken);
         User user = userRepository.findByUsername(username).orElse(null);
 
