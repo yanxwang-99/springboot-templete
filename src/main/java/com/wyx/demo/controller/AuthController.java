@@ -40,7 +40,6 @@ public class AuthController {
                     .body(ApiResponse.error(-1, "Username or password is incorrect."));
         }
 
-        // 生成 refreshToken 并设置 Cookie
         String refreshToken = jwtUtil.generateRefreshToken(
                 loginResult.getUser().getId(), loginResult.getUser().getUsername());
         setCookie(response, refreshToken);
@@ -50,8 +49,8 @@ public class AuthController {
 
     @PostMapping("/logout")
     public ApiResponse<String> logout(HttpServletRequest request, HttpServletResponse response) {
-        String token = extractToken(request);
-        if (token != null) {
+        String token = (String) request.getAttribute("jwt_token");
+        if (token != null && jwtUtil.validateToken(token)) {
             Long expMillis = jwtUtil.getExpirationFromToken(token);
             if (expMillis != null) {
                 tokenBlacklist.add(token, expMillis - System.currentTimeMillis());
@@ -84,16 +83,13 @@ public class AuthController {
                     .body(ApiResponse.error(-1, "Forbidden Exception"));
         }
 
-        // 将旧 refreshToken 加入黑名单，防止重放
         Long expMillis = jwtUtil.getExpirationFromToken(refreshToken);
         if (expMillis != null) {
             tokenBlacklist.add(refreshToken, expMillis - System.currentTimeMillis());
         }
 
-        // 设置新的 refreshToken Cookie
         setCookie(response, refreshResult.getRefreshToken());
 
-        // 直接返回 accessToken 字符串，不包装
         return ResponseEntity.ok(refreshResult.getAccessToken());
     }
 
@@ -118,13 +114,5 @@ public class AuthController {
     private void clearCookie(HttpServletResponse response) {
         response.addHeader("Set-Cookie",
                 String.format("%s=; Path=/; HttpOnly; Secure; SameSite=none; Max-Age=0", COOKIE_NAME));
-    }
-
-    private String extractToken(HttpServletRequest request) {
-        String authHeader = request.getHeader("Authorization");
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            return authHeader.substring(7);
-        }
-        return null;
     }
 }
