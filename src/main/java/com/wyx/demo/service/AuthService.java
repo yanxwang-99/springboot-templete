@@ -5,8 +5,6 @@ import com.wyx.demo.dto.LoginResponse;
 import com.wyx.demo.entity.User;
 import com.wyx.demo.repository.UserRepository;
 import com.wyx.demo.util.JwtUtil;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -17,12 +15,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final JwtUtil jwtUtil;
 
-    @Getter
-    @AllArgsConstructor
-    public static class LoginResult {
-        private final LoginResponse response;
-        private final User user;
-    }
+    public record LoginResult(LoginResponse response, User user) {}
 
     public LoginResult login(LoginRequest request) {
         User user = userRepository.findByUsername(request.getUsername())
@@ -42,12 +35,7 @@ public class AuthService {
         return new LoginResult(loginResponse, user);
     }
 
-    @Getter
-    @AllArgsConstructor
-    public static class RefreshResult {
-        private final String accessToken;
-        private final String refreshToken;
-    }
+    public record RefreshResult(String accessToken, String refreshToken) {}
 
     public RefreshResult refresh(String refreshToken) {
         if (refreshToken == null || !jwtUtil.validateToken(refreshToken)) {

@@ -41,10 +41,10 @@ public class AuthController {
         }
 
         String refreshToken = jwtUtil.generateRefreshToken(
-                loginResult.getUser().getId(), loginResult.getUser().getUsername());
+                loginResult.user().getId(), loginResult.user().getUsername());
         setCookie(response, refreshToken);
 
-        return ResponseEntity.ok(ApiResponse.success(loginResult.getResponse()));
+        return ResponseEntity.ok(ApiResponse.success(loginResult.response()));
     }
 
     @PostMapping("/logout")
@@ -99,9 +99,9 @@ public class AuthController {
             tokenBlacklist.add(refreshToken, expMillis - System.currentTimeMillis());
         }
 
-        setCookie(response, refreshResult.getRefreshToken());
+        setCookie(response, refreshResult.refreshToken());
 
-        return ResponseEntity.ok(refreshResult.getAccessToken());
+        return ResponseEntity.ok(refreshResult.accessToken());
     }
 
     private String getCookie(HttpServletRequest request) {
