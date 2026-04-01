@@ -49,15 +49,26 @@ public class AuthController {
 
     @PostMapping("/logout")
     public ApiResponse<String> logout(HttpServletRequest request, HttpServletResponse response) {
-        String token = (String) request.getAttribute("jwt_token");
-        if (token != null && jwtUtil.validateToken(token)) {
-            Long expMillis = jwtUtil.getExpirationFromToken(token);
-            if (expMillis != null) {
-                tokenBlacklist.add(token, expMillis - System.currentTimeMillis());
-            }
-        }
+        // 将 accessToken 加入黑名单（如果有）
+        String accessToken = (String) request.getAttribute("jwt_token");
+        addToBlacklist(accessToken);
+
+        // 将 refreshToken 加入黑名单（如果有）
+        String refreshToken = getCookie(request);
+        addToBlacklist(refreshToken);
+
         clearCookie(response);
         return ApiResponse.success("");
+    }
+
+    private void addToBlacklist(String token) {
+        if (token == null) {
+            return;
+        }
+        Long expMillis = jwtUtil.getExpirationFromToken(token);
+        if (expMillis != null && expMillis > System.currentTimeMillis()) {
+            tokenBlacklist.add(token, expMillis - System.currentTimeMillis());
+        }
     }
 
     @PostMapping("/refresh")
